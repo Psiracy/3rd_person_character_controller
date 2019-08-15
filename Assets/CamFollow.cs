@@ -13,13 +13,15 @@ public class CamFollow : MonoBehaviour
     public Transform followObject;
 
     float mouseX, mouseY;
-    public float rotX, rotY;
+    float rotX, rotY;
     // Start is called before the first frame update
     void Start()
     {
         Vector3 startRotation = transform.eulerAngles;
         rotX = startRotation.x;
         rotY = startRotation.y;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     // Update is called once per frame

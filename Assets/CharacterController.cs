@@ -34,7 +34,6 @@ public class CharacterController : MonoBehaviour
     public Vector3 desiredVelocity;
 
     [Header("Turning")]
-    public Transform hip;
     Vector3 previusRatation;
     public float walkingTurnSpeed, runningTurnSpeed;
 
@@ -42,9 +41,9 @@ public class CharacterController : MonoBehaviour
     Animator animator;
 
     [Header("Misc")]
-    public ParticleSystem landingPartical;
-    public CamFollow camPivot;
-    bool isJumping, isGrounded, isRunning;
+    public Transform camPivot;
+    Camera cam;
+    bool  isRunning;
     Vector3 offset;
 
     // Start is called before the first frame update
@@ -54,18 +53,11 @@ public class CharacterController : MonoBehaviour
         force = forceinKMH / 3.6f;
         animator = GetComponent<Animator>();
         offset = Vector3.zero;
+        cam = Camera.main;
     }
 
     void FixedUpdate()
     {
-        //#region camara
-        ////camera
-        ////cam movement
-        //camPivot.transform.position = new Vector3(transform.position.x, camPivot.transform.position.y, transform.position.z);
-        ////cam rotation
-        //camPivot.transform.rotation = Quaternion.Euler(new Vector3(0, Input.mousePosition.x * camTurnSpeed, 0));
-        //#endregion camera
-
         #region animations
         //movement animation checker
         movementSpeed = velocity.magnitude * 3.6f;
@@ -94,27 +86,8 @@ public class CharacterController : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
         float horizontal = Input.GetAxis("Horizontal");
         movement = new Vector3(horizontal, 0, vertical);
+
         #region turning
-        //turn character's back towards camera
-        if (!Input.GetButton("Fire2"))
-        {
-            switch (moveSpeed)
-            {
-                case MoveSpeed.idle:
-                    transform.rotation = Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0);
-                    break;
-                case MoveSpeed.walking:
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0), Time.deltaTime * walkingTurnSpeed);
-                    break;
-                case MoveSpeed.running:
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0), Time.deltaTime * runningTurnSpeed);
-                    break;
-                default:
-                    break;
-            }
-
-        }
-
         //turns character movement direction
         //left
         if (movement.x < 0)
@@ -136,48 +109,64 @@ public class CharacterController : MonoBehaviour
         {
             moveDirection = MoveDirection.backwards;
         }
-        //diagonal
-        if (movement.x != 0)
+
+        Quaternion desireredRotation = Quaternion.identity;
+
+        switch (moveDirection)
         {
-            switch (moveDirection)
-            {
-                case MoveDirection.forward:
-                    //right
-                    if (movement.x > .8f && movement.z > .5f)
-                    {
-                        hip.localEulerAngles = new Vector3(0, 30, 0);
-                    }
-                    //left
-                    if (movement.x < -.8f && movement.z > .5f)
-                    {
-                        hip.localEulerAngles = new Vector3(0, -30, 0);
-                    }
-                    break;
-                case MoveDirection.backwards:
-                    //right
-                    if (movement.x > .8f && movement.z < -.5f)
-                    {
-                        hip.localEulerAngles = new Vector3(0, -30, 0);
-                    }
-                    //left
-                    if (movement.x < -.8f && movement.z < -.5f)
-                    {
-                        hip.localEulerAngles = new Vector3(0, 30, 0);
-                    }
-                    break;
-                default:
-                    hip.localEulerAngles = Vector3.zero;
-                    break;
-            }
+            case MoveDirection.forward:
+                desireredRotation = Quaternion.Euler(Vector3.zero);
+                //right
+                if (movement.x > .8f && movement.z > .5f)
+                {
+                    desireredRotation = Quaternion.Euler(new Vector3(0, 30, 0));
+                }
+                //left
+                if (movement.x < -.8f && movement.z > .5f)
+                {
+                    desireredRotation = Quaternion.Euler(new Vector3(0, -30, 0));
+                }
+                break;
+            case MoveDirection.left:
+                desireredRotation = Quaternion.Euler(new Vector3(0, -90, 0));
+                break;
+            case MoveDirection.right:
+                desireredRotation = Quaternion.Euler(new Vector3(0, 90, 0));
+                break;
+            case MoveDirection.backwards:
+                desireredRotation = Quaternion.Euler(new Vector3(0, 180, 0));
+                //right
+                if (movement.x > .8f && movement.z < -.5f)
+                {
+                    desireredRotation = Quaternion.Euler(new Vector3(0, 180 - 30, 0));
+                }
+                //left
+                if (movement.x < -.8f && movement.z < -.5f)
+                {
+                    desireredRotation = Quaternion.Euler(new Vector3(0, 180 + 30, 0));
+                }
+                break;
+            default:
+                break;
         }
-        else
+
+        desireredRotation *= Quaternion.Euler(0, camPivot.eulerAngles.y, 0);
+
+        switch (moveSpeed)
         {
-            hip.localEulerAngles = Vector3.zero;
+            case MoveSpeed.walking:
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, desireredRotation, Time.deltaTime * walkingTurnSpeed);
+                break;
+            case MoveSpeed.running:
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, desireredRotation, Time.deltaTime * runningTurnSpeed);
+                break;
+            default:
+                break;
         }
-        animator.SetFloat("WalkingDirection", (float)moveDirection);
+        //// animator.SetFloat("WalkingDirection", (float)moveDirection);
         #endregion turning
 
-        //run
+        //set speed
         if (Input.GetKey(KeyCode.LeftShift))
         {
             accelaration = 5 / 3.6f;
@@ -192,7 +181,8 @@ public class CharacterController : MonoBehaviour
         }
 
         //desired velocity
-        targetPos = transform.position + transform.TransformDirection(movement * desiredSpeed);
+        targetPos = transform.position + camPivot.TransformDirection(movement * desiredSpeed);
+        targetPos.y = 0;
         if (movement != Vector3.zero)
         {
             desiredVelocity = Vector3.Normalize(targetPos - transform.position) * desiredSpeed;
@@ -211,38 +201,7 @@ public class CharacterController : MonoBehaviour
 
         //velocity
         velocity = Vector3.ClampMagnitude(velocity + steering, desiredSpeed * Time.deltaTime);
-        if (isJumping == false)
-        {
             transform.position += velocity;
-        }
-        else
-        {
-            transform.position += velocity * 1.5f;
-        }
-
-        //jump
-        if (Input.GetButtonDown("Jump"))
-        {
-            animator.SetFloat("JumpType", Random.Range(0, 2));
-            animator.SetTrigger("Jump");
-            isJumping = true;
-            isGrounded = false;
-        }
-
-        if (isGrounded == true)
-        {
-            isJumping = false;
-        }
         #endregion movement
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        isGrounded = true;
-    }
-
-    public void StartPartical()
-    {
-        landingPartical.Play();
     }
 }
