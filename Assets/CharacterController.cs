@@ -38,15 +38,12 @@ public class CharacterController : MonoBehaviour
     Vector3 previusRatation;
     public float walkingTurnSpeed, runningTurnSpeed;
 
-    [Header("Camera")]
-    public float camTurnSpeed;
-    public GameObject camPivot, mainCam;
-
     [Header("Animation")]
     Animator animator;
 
     [Header("Misc")]
     public ParticleSystem landingPartical;
+    public CamFollow camPivot;
     bool isJumping, isGrounded, isRunning;
     Vector3 offset;
 
@@ -61,21 +58,21 @@ public class CharacterController : MonoBehaviour
 
     void FixedUpdate()
     {
-        #region camara
-        //camera
-        //cam movement
-        camPivot.transform.position = new Vector3(transform.position.x, camPivot.transform.position.y, transform.position.z);
-        //cam rotation
-        camPivot.transform.rotation = Quaternion.Euler(new Vector3(0, Input.mousePosition.x * camTurnSpeed, 0));
-        #endregion camera
+        //#region camara
+        ////camera
+        ////cam movement
+        //camPivot.transform.position = new Vector3(transform.position.x, camPivot.transform.position.y, transform.position.z);
+        ////cam rotation
+        //camPivot.transform.rotation = Quaternion.Euler(new Vector3(0, Input.mousePosition.x * camTurnSpeed, 0));
+        //#endregion camera
 
         #region animations
         //movement animation checker
         movementSpeed = velocity.magnitude * 3.6f;
 
+        //set animation based on speed
         if (animator.GetBool("IsMoveing") == false)
         {
-            Debug.Log("wee");
             animator.SetFloat("Speed", 0);
             moveSpeed = MoveSpeed.idle;
         }
@@ -90,25 +87,6 @@ public class CharacterController : MonoBehaviour
             moveSpeed = MoveSpeed.running;
         }
 
-        //set animation based on speed
-        if (!Input.GetButton("Fire2"))
-        {
-            switch (moveSpeed)
-            {
-                case MoveSpeed.idle:
-                    transform.rotation = camPivot.transform.rotation;
-                    break;
-                case MoveSpeed.walking:
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, camPivot.transform.rotation, Time.deltaTime * walkingTurnSpeed);
-                    break;
-                case MoveSpeed.running:
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, camPivot.transform.rotation, Time.deltaTime * runningTurnSpeed);
-                    break;
-                default:
-                    break;
-            }
-
-        }
         #endregion animations
 
         #region movement
@@ -116,8 +94,28 @@ public class CharacterController : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
         float horizontal = Input.GetAxis("Horizontal");
         movement = new Vector3(horizontal, 0, vertical);
-
         #region turning
+        //turn character's back towards camera
+        if (!Input.GetButton("Fire2"))
+        {
+            switch (moveSpeed)
+            {
+                case MoveSpeed.idle:
+                    transform.rotation = Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0);
+                    break;
+                case MoveSpeed.walking:
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0), Time.deltaTime * walkingTurnSpeed);
+                    break;
+                case MoveSpeed.running:
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, camPivot.transform.eulerAngles.y, 0), Time.deltaTime * runningTurnSpeed);
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        //turns character movement direction
         //left
         if (movement.x < 0)
         {
@@ -139,37 +137,43 @@ public class CharacterController : MonoBehaviour
             moveDirection = MoveDirection.backwards;
         }
         //diagonal
-        switch (moveDirection)
+        if (movement.x != 0)
         {
-            case MoveDirection.forward:
-                //right
-                if (movement.x > .8f && movement.z > .5f)
-                {
-                    hip.localEulerAngles = new Vector3(0, 30, 0);
-                }
-                //left
-                if (movement.x < -.8f && movement.z > .5f)
-                {
-                    hip.localEulerAngles = new Vector3(0, -30, 0);
-                }
-                break;
-            case MoveDirection.backwards:
-                //right
-                if (movement.x > .8f && movement.z < -.5f)
-                {
-                    hip.localEulerAngles = new Vector3(0, -30, 0);
-                }
-                //left
-                if (movement.x < -.8f && movement.z < -.5f)
-                {
-                    hip.localEulerAngles = new Vector3(0, 30, 0);
-                }
-                break;
-            default:
-                hip.localEulerAngles = Vector3.zero;
-                break;
+            switch (moveDirection)
+            {
+                case MoveDirection.forward:
+                    //right
+                    if (movement.x > .8f && movement.z > .5f)
+                    {
+                        hip.localEulerAngles = new Vector3(0, 30, 0);
+                    }
+                    //left
+                    if (movement.x < -.8f && movement.z > .5f)
+                    {
+                        hip.localEulerAngles = new Vector3(0, -30, 0);
+                    }
+                    break;
+                case MoveDirection.backwards:
+                    //right
+                    if (movement.x > .8f && movement.z < -.5f)
+                    {
+                        hip.localEulerAngles = new Vector3(0, -30, 0);
+                    }
+                    //left
+                    if (movement.x < -.8f && movement.z < -.5f)
+                    {
+                        hip.localEulerAngles = new Vector3(0, 30, 0);
+                    }
+                    break;
+                default:
+                    hip.localEulerAngles = Vector3.zero;
+                    break;
+            }
         }
-
+        else
+        {
+            hip.localEulerAngles = Vector3.zero;
+        }
         animator.SetFloat("WalkingDirection", (float)moveDirection);
         #endregion turning
 
