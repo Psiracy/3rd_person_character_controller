@@ -320,8 +320,6 @@ MonoBehaviour:
   walkSpeedinKMH: 4
   runSpeedinKMH: 8
   mass: 4
-  velocity: {x: 0, y: 0, z: 0}
-  desiredVelocity: {x: 0, y: 0, z: 0}
   walkingTurnSpeed: 200
   runningTurnSpeed: 300
   camPivot: {fileID: 2099235512}
@@ -724,9 +722,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf395d5fadd9501448fdd86b9a239161, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minDistance: 1
+  minDistance: 0.7
   closeInSpeed: 10
-  groundClipPercentage: 0
+  groundClipPercentage: 0.84
 --- !u!1 &965224452
 GameObject:
   m_ObjectHideFlags: 0

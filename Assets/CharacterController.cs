@@ -20,8 +20,10 @@ enum MoveDirection
 public class CharacterController : MonoBehaviour
 {
     [Header("Movement")]
-    public float movementSpeed;
-    public float accelarationinKMH, forceinKMH, walkSpeedinKMH, runSpeedinKMH;
+    [SerializeField]
+    float movementSpeed;
+    [SerializeField]
+    float accelarationinKMH, forceinKMH, walkSpeedinKMH, runSpeedinKMH;
     float accelaration, desiredSpeed, force;
     public float mass;
 
@@ -30,23 +32,24 @@ public class CharacterController : MonoBehaviour
 
     Vector3 movement;
     Vector3 targetPos;
-    public Vector3 velocity;
-    public Vector3 desiredVelocity;
+    Vector3 velocity;
+    Vector3 desiredVelocity;
 
     [Header("Turning")]
     Vector3 previusRatation;
-    public float walkingTurnSpeed, runningTurnSpeed;
+    [SerializeField]
+    float walkingTurnSpeed, runningTurnSpeed;
 
     [Header("Animation")]
     Animator animator;
 
     [Header("Misc")]
-    public Transform camPivot;
+    [SerializeField]
+    Transform camPivot;
     Camera cam;
-    bool  isRunning;
+    bool isRunning;
     Vector3 offset;
 
-    // Start is called before the first frame update
     void Start()
     {
         accelaration = accelarationinKMH / 3.6f;
@@ -82,13 +85,14 @@ public class CharacterController : MonoBehaviour
         #endregion animations
 
         #region movement
-        //movement
+        //get movement input
         float vertical = Input.GetAxis("Vertical");
         float horizontal = Input.GetAxis("Horizontal");
         movement = new Vector3(horizontal, 0, vertical);
 
+        //turn character the correct way
         #region turning
-        //turns character movement direction
+        //set movement direction
         //left
         if (movement.x < 0)
         {
@@ -110,12 +114,14 @@ public class CharacterController : MonoBehaviour
             moveDirection = MoveDirection.backwards;
         }
 
+        //rotate the character
         Quaternion desireredRotation = Quaternion.identity;
 
         switch (moveDirection)
         {
             case MoveDirection.forward:
                 desireredRotation = Quaternion.Euler(Vector3.zero);
+                //diagonal
                 //right
                 if (movement.x > .8f && movement.z > .5f)
                 {
@@ -135,6 +141,7 @@ public class CharacterController : MonoBehaviour
                 break;
             case MoveDirection.backwards:
                 desireredRotation = Quaternion.Euler(new Vector3(0, 180, 0));
+                //diagonal
                 //right
                 if (movement.x > .8f && movement.z < -.5f)
                 {
@@ -150,8 +157,10 @@ public class CharacterController : MonoBehaviour
                 break;
         }
 
+        //add the camare rotatate to the desired rotation
         desireredRotation *= Quaternion.Euler(0, camPivot.eulerAngles.y, 0);
 
+        //rotate speed depens on movement speed
         switch (moveSpeed)
         {
             case MoveSpeed.walking:
@@ -163,7 +172,6 @@ public class CharacterController : MonoBehaviour
             default:
                 break;
         }
-        //// animator.SetFloat("WalkingDirection", (float)moveDirection);
         #endregion turning
 
         //set speed
@@ -201,7 +209,7 @@ public class CharacterController : MonoBehaviour
 
         //velocity
         velocity = Vector3.ClampMagnitude(velocity + steering, desiredSpeed * Time.deltaTime);
-            transform.position += velocity;
+        transform.position += velocity;
         #endregion movement
     }
 }
